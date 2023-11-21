@@ -32,13 +32,11 @@ public class FaceDetectorFrameProcessorPlugin: FrameProcessorPlugin {
     let ciImage = CIImage(cvPixelBuffer: frame)
     let res = self.detectEmoji(imageCi: ciImage)
     
-    return [
-         "res": res
-       ]
+    return res
   }
   
   
-  private func detectEmoji(imageCi : CIImage) -> String {
+  private func detectEmoji(imageCi : CIImage) ->  Any {
         let faceImage = imageCi
         let accuracy = [CIDetectorAccuracy: CIDetectorAccuracyHigh]
         let faceDetector = CIDetector(ofType: CIDetectorTypeFace, context: nil, options: accuracy)
@@ -58,12 +56,12 @@ public class FaceDetectorFrameProcessorPlugin: FrameProcessorPlugin {
 //                 print("leftEyeClosed: \(leftEyeClosed)\n\n")
 //                 print("faceAngle: \(face.faceAngle)\n\n")
                
-                 return "isSmiling: \(isSmiling),blinking: \(blinking), faceAngle: \(face.faceAngle) "
+               return ["smiling" : isSmiling,"blinking": blinking, "faceAngle": face.faceAngle ]
              }
          } else {
-           return ""
+           return []
          }
-    return ""
+    return []
   }
   
  

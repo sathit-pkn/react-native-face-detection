@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Platform, NativeModules, StyleSheet } from 'react-native';
+import { Platform, NativeModules, StyleSheet, Text, View } from 'react-native';
 import {
   VisionCameraProxy,
   runAtTargetFps,
@@ -35,8 +35,26 @@ export default function App() {
 
   const [step, setStep] = useState(0)
 
+  const [textStep, setTextStep] = useState('ยิ้ม')
+
   const myFunction = (() => {
-      console.log("my function ")
+      //console.log("my function ")
+      if (progress.value == 1 ) {
+        setTextStep('หันขวา')
+      }
+
+      if (progress.value == 2 ) {
+        setTextStep('หันช้าย')
+      }
+
+      if (progress.value == 3 ) {
+        setTextStep('กระพริบตา')
+      }
+
+      if (progress.value == 4 ) {
+        setTextStep('สำเร็จ')
+      }
+     
   })
 
   const myFunctionJS = Worklets.createRunInJsFn(myFunction)
@@ -67,16 +85,55 @@ export default function App() {
           throw new Error("Failed to load Frame Processor Plugin!")
         }
 
-        progress.value =  progress.value + 1
-        console.log(progress.value)
-
-        if (progress.value == 5 ) {
-          myFunctionJS()
-        }
+       
+        // if (progress.value == 5 ) {
+        //   myFunctionJS()
+        // }
         const faces =  plugin.call(frame)
 
         if ( Platform.OS === 'ios') {
+          console.log("res scan face ",JSON.stringify(faces))
           // is ios
+
+          if ( progress.value == 0 ) {
+            if ( faces?.smiling ) {
+              progress.value = 1
+              smiling = true
+              console.log('step=',1)
+              myFunctionJS()
+            }
+          }
+
+          if ( progress.value == 1 ) {
+             // turn right
+            if ( Number(faces?.faceAngle) > 4.0 ) {
+              progress.value = 2
+              smiling = true
+              console.log('step=',2)
+              myFunctionJS()
+            }
+          }
+
+          if ( progress.value == 2 ) {
+            // turn left
+            if ( Number(faces?.faceAngle) < -4.0 ) {
+              progress.value = 3
+              smiling = true
+              console.log('step=',3)
+              myFunctionJS()
+            }
+          }
+
+          if ( progress.value == 3 ) {
+            if ( faces?.blinking ) {
+              progress.value = 4
+              smiling = true
+              console.log('step=',4)
+              myFunctionJS()
+            }
+          }
+
+
         } else {
           // is andoird
           console.log("res scan face ",JSON.stringify(faces))
@@ -90,6 +147,7 @@ export default function App() {
             }
 
             if ( smiling ) {
+              // turn right
               if ( Number(faces?.rollAngle) > 3.0 ) {
                 rollAngleLeft = true
                 
@@ -98,6 +156,7 @@ export default function App() {
             }
 
             if ( smiling &&  rollAngleLeft) {
+               // turn left
                 if ( Number(faces?.rollAngle) < -3.0 ) {
                   rollAngleRight = true
                  
@@ -132,13 +191,30 @@ export default function App() {
   const handleLorem = (lorem: boolean) => { setStep(8) }
 
 
-  return device != null ? (
-    <Camera
-      style={StyleSheet.absoluteFill}
-      device={device}
-      isActive={true}
-      frameProcessor={frameProcessor}
-      pixelFormat="yuv"
-    />
+  return  device != null ? (
+    <>
+        <Camera
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={true}
+          frameProcessor={frameProcessor}
+          pixelFormat="yuv"
+        />
+         <Text style={styles.innerText}>{textStep}</Text>
+    </>
   ) : null;
+     
+  
 }
+
+const styles = StyleSheet.create({
+  baseText: {
+    fontWeight: 'bold',
+  },
+  innerText: {
+    marginTop: 100,
+    marginLeft: 100,
+    fontSize: 24,
+    color: 'red',
+  },
+});
