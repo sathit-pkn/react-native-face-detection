@@ -33,10 +33,7 @@ public class FaceDetectorFrameProcessorPlugin: FrameProcessorPlugin {
     let res = self.detectEmoji(imageCi: ciImage)
     
     return [
-         "example_str": res,
-         "example_bool": false,
-         "example_double": 6.7,
-         "example_array": ["Good bye", false, 21.37]
+         "res": res
        ]
   }
   

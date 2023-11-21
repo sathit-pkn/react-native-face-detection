@@ -12,6 +12,7 @@ import com.mrousavy.camera.frameprocessor.FrameProcessorPluginRegistry;
 import java.util.Collections;
 import java.util.List;
 
+
 public class FaceDetectorFrameProcessorPluginPackage implements ReactPackage {
   static {
     FrameProcessorPluginRegistry.addFrameProcessorPlugin(
