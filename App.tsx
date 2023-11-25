@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { Platform, NativeModules, StyleSheet, Text, View } from 'react-native';
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Platform, NativeModules, StyleSheet, Text, View,Image } from 'react-native';
 import {
   VisionCameraProxy,
   runAtTargetFps,
@@ -7,13 +7,9 @@ import {
   useCameraDevices,
   useFrameProcessor
 } from 'react-native-vision-camera';
-
-
+import ImageResizer from 'react-native-image-resizer';
 import { Camera } from 'react-native-vision-camera';
-import { useEffect, useState } from 'react';
 import { useSharedValue } from 'react-native-worklets-core';
-
-
 
 const plugin = VisionCameraProxy.initFrameProcessorPlugin('detectFaces')
 
@@ -36,6 +32,59 @@ export default function App() {
   const [step, setStep] = useState(0)
 
   const [textStep, setTextStep] = useState('ยิ้ม')
+
+
+  const  [photo, setPhoto]  = useState(null)
+  const camera = useRef(null)
+  const takePhoto = async () => {
+    try {
+      //Error Handle better
+      if (camera.current == null) throw new Error('Camera Ref is Null');
+      console.log('Photo taking ....');
+      const photo = await camera.current.takePhoto({});
+      console.log(photo.path)
+      console.log(photo.orientation)
+
+      console.log('width',photo.width)
+      console.log('height',photo.height)
+
+      let rotation = 0
+      if ( Platform.OS === 'ios') {
+        rotation = 0
+      } else {
+        rotation = 90
+      }
+      ImageResizer.createResizedImage(photo.path, 500, 500,'JPEG',
+      100,
+      rotation,
+      undefined,
+      false,)
+      .then(response => {
+        setPhoto(response.path)
+      })
+      .catch(err => {
+     
+      });
+      
+      //setPhoto(photo.path)
+
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    
+      // setTimeout(() => 
+      // {
+      //    takePhoto()
+      // },
+      // 4000);
+
+  
+  }, [])
+
 
   const myFunction = (() => {
       //console.log("my function ")
@@ -84,105 +133,106 @@ export default function App() {
         if (plugin == null) {
           throw new Error("Failed to load Frame Processor Plugin!")
         }
-
+console.log(frame.pixelFormat)
        
         // if (progress.value == 5 ) {
         //   myFunctionJS()
         // }
-        const faces =  plugin.call(frame)
+       //  console.log(frame.toArrayBuffer())
+        // const faces =  plugin.call(frame)
 
-        if ( Platform.OS === 'ios') {
-          console.log("res scan face ",JSON.stringify(faces))
-          // is ios
+        // if ( Platform.OS === 'ios') {
+        //   console.log("res scan face ",JSON.stringify(faces))
+        //   // is ios
 
-          if ( progress.value == 0 ) {
-            if ( faces?.smiling ) {
-              progress.value = 1
-              smiling = true
-              console.log('step=',1)
-              myFunctionJS()
-            }
-          }
+        //   if ( progress.value == 0 ) {
+        //     if ( faces?.smiling ) {
+        //       progress.value = 1
+        //       smiling = true
+        //       console.log('step=',1)
+        //       myFunctionJS()
+        //     }
+        //   }
 
-          if ( progress.value == 1 ) {
-             // turn right
-            if ( Number(faces?.faceAngle) > 4.0 ) {
-              progress.value = 2
-              smiling = true
-              console.log('step=',2)
-              myFunctionJS()
-            }
-          }
+        //   if ( progress.value == 1 ) {
+        //      // turn right
+        //     if ( Number(faces?.faceAngle) > 4.0 ) {
+        //       progress.value = 2
+        //       smiling = true
+        //       console.log('step=',2)
+        //       myFunctionJS()
+        //     }
+        //   }
 
-          if ( progress.value == 2 ) {
-            // turn left
-            if ( Number(faces?.faceAngle) < -4.0 ) {
-              progress.value = 3
-              smiling = true
-              console.log('step=',3)
-              myFunctionJS()
-            }
-          }
+        //   if ( progress.value == 2 ) {
+        //     // turn left
+        //     if ( Number(faces?.faceAngle) < -4.0 ) {
+        //       progress.value = 3
+        //       smiling = true
+        //       console.log('step=',3)
+        //       myFunctionJS()
+        //     }
+        //   }
 
-          if ( progress.value == 3 ) {
-            if ( faces?.blinking ) {
-              progress.value = 4
-              smiling = true
-              console.log('step=',4)
-              myFunctionJS()
-            }
-          }
+        //   if ( progress.value == 3 ) {
+        //     if ( faces?.blinking ) {
+        //       progress.value = 4
+        //       smiling = true
+        //       console.log('step=',4)
+        //       myFunctionJS()
+        //     }
+        //   }
 
 
-        } else {
-          // is andoird
-          console.log("res scan face ",JSON.stringify(faces))
-          if ( faces != undefined ) {
-            if ( step == 0 ) {
-              if ( Number(faces?.smiling) > 0.8 ) {
+        // } else {
+        //   // is andoird
+        //   console.log("res scan face ",JSON.stringify(faces))
+        //   if ( faces != undefined ) {
+        //     if ( step == 0 ) {
+        //       if ( Number(faces?.smiling) > 0.8 ) {
                
-                smiling = true
-                console.log('step=',1)
-              }
-            }
+        //         smiling = true
+        //         console.log('step=',1)
+        //       }
+        //     }
 
-            if ( smiling ) {
-              // turn right
-              if ( Number(faces?.rollAngle) > 3.0 ) {
-                rollAngleLeft = true
+        //     if ( smiling ) {
+        //       // turn right
+        //       if ( Number(faces?.rollAngle) > 3.0 ) {
+        //         rollAngleLeft = true
                 
-                console.log('step=',2)
-              }
-            }
+        //         console.log('step=',2)
+        //       }
+        //     }
 
-            if ( smiling &&  rollAngleLeft) {
-               // turn left
-                if ( Number(faces?.rollAngle) < -3.0 ) {
-                  rollAngleRight = true
+        //     if ( smiling &&  rollAngleLeft) {
+        //        // turn left
+        //         if ( Number(faces?.rollAngle) < -3.0 ) {
+        //           rollAngleRight = true
                  
-                  console.log('step=',3)
-                }
-            }
+        //           console.log('step=',3)
+        //         }
+        //     }
 
-            if ( smiling  ) {
-              if ( Number(faces?.eyeOpenProbability) < 0.5 ) {
-                eyeOpenProbability = true
+        //     if ( smiling  ) {
+        //       if ( Number(faces?.eyeOpenProbability) < 0.5 ) {
+        //         eyeOpenProbability = true
 
-                console.log('step=',4)
-                console.log('success')
-              }
-            }
-            //console.log('step=',step)
-          }
+        //         console.log('step=',4)
+        //         console.log('success')
+        //       }
+        //     }
+        //     //console.log('step=',step)
+        //   }
 
 
-          console.log('smiling=',smiling)
-          console.log('rollAngleLeft=',rollAngleLeft)
-          console.log('rollAngleRight=',rollAngleRight)
-          console.log('eyeOpenProbability=',eyeOpenProbability)
+        //   console.log('smiling=',smiling)
+        //   console.log('rollAngleLeft=',rollAngleLeft)
+        //   console.log('rollAngleRight=',rollAngleRight)
+        //   console.log('eyeOpenProbability=',eyeOpenProbability)
          
-        //  runOnJS(setStep)(8);
-        }
+        // //  runOnJS(setStep)(8);
+        // }
     })
 
    
@@ -194,13 +244,18 @@ export default function App() {
   return  device != null ? (
     <>
         <Camera
+          ref={camera}
           style={StyleSheet.absoluteFill}
           device={device}
           isActive={true}
           frameProcessor={frameProcessor}
-          pixelFormat="yuv"
+          photo={true}
+         // pixelFormat="yuv"
         />
          <Text style={styles.innerText}>{textStep}</Text>
+         {photo != null && (
+                    <Image style={{width: '100%', height: '100%'}} source={{uri: 'file://' + photo}} />
+                  )}
     </>
   ) : null;
      

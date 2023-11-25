@@ -125,41 +125,43 @@ public class FaceDetectorFrameProcessorPlugin extends FrameProcessorPlugin {
   public Object callback(@NonNull Frame frame, @Nullable Map<String, Object> params) {
 
       @SuppressLint("UnsafeOptInUsageError")
-      Image mediaImage = frame.getImage();
+      Image mediaImage = frame.getImage(); 
 
-      Map<String, String> map = new HashMap<>();
-      if (mediaImage != null) {
-          InputImage image = InputImage.fromMediaImage(mediaImage, 270);
-          Task<List<Face>> task = faceDetector.process(image);
-        //  WritableNativeArray array = new WritableNativeArray();
-         // WritableMap map =  new WritableNativeMap();
 
-          try {
-              List<Face> faces = Tasks.await(task);
-              for (Face face : faces) {
-                 
+      System.out.println("dddddddddddd");
+       Map<String, String> map = new HashMap<>();
+       if (mediaImage != null) {
+           InputImage image = InputImage.fromMediaImage(mediaImage, 270);
+           Task<List<Face>> task = faceDetector.process(image);
+         //  WritableNativeArray array = new WritableNativeArray();
+          // WritableMap map =  new WritableNativeMap();
 
-//                  map.put("rollAngle", face.getHeadEulerAngleZ()); // Head is rotated to the left rotZ degrees
-//                  map.putDouble("pitchAngle", face.getHeadEulerAngleX()); // Head is rotated to the right rotX degrees
-//                  map.putDouble("yawAngle", face.getHeadEulerAngleY());  // Head is tilted sideways rotY degrees
-//                  map.putDouble("leftEyeOpenProbability", face.getLeftEyeOpenProbability());
-//                  map.putDouble("rightEyeOpenProbability", face.getRightEyeOpenProbability());
-//                  map.putDouble("smilingProbability", face.getSmilingProbability());
+           try {
+               List<Face> faces = Tasks.await(task);
+               for (Face face : faces) {
 
-                  map.put("rollAngle", Float.toString(face.getHeadEulerAngleZ()));
-                  map.put("pitchAngle", Float.toString(face.getHeadEulerAngleX()));
-                  map.put("yawAngle", Float.toString(face.getHeadEulerAngleY()));
-                  map.put("eyeOpenProbability", face.getLeftEyeOpenProbability().toString());
-                  map.put("smiling", face.getSmilingProbability().toString());
 
-                  return map;
-              }
-            //  map.put("example_array", task.toString());
-             // return map;
-          } catch (Exception e) {
-              e.printStackTrace();
-          }
-      }
+ //                  map.put("rollAngle", face.getHeadEulerAngleZ()); // Head is rotated to the left rotZ degrees
+ //                  map.putDouble("pitchAngle", face.getHeadEulerAngleX()); // Head is rotated to the right rotX degrees
+ //                  map.putDouble("yawAngle", face.getHeadEulerAngleY());  // Head is tilted sideways rotY degrees
+ //                  map.putDouble("leftEyeOpenProbability", face.getLeftEyeOpenProbability());
+ //                  map.putDouble("rightEyeOpenProbability", face.getRightEyeOpenProbability());
+ //                  map.putDouble("smilingProbability", face.getSmilingProbability());
+
+                   map.put("rollAngle", Float.toString(face.getHeadEulerAngleZ()));
+                   map.put("pitchAngle", Float.toString(face.getHeadEulerAngleX()));
+                   map.put("yawAngle", Float.toString(face.getHeadEulerAngleY()));
+                   map.put("eyeOpenProbability", face.getLeftEyeOpenProbability().toString());
+                   map.put("smiling", face.getSmilingProbability().toString());
+
+                   return map;
+               }
+             //  map.put("example_array", task.toString());
+              // return map;
+           } catch (Exception e) {
+               e.printStackTrace();
+           }
+       }
 
       return null;
   }
