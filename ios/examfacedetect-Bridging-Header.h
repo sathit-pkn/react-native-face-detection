@@ -8,5 +8,6 @@
 #ifndef examfacedetect_Bridging_Header_h
 #define examfacedetect_Bridging_Header_h
 #import <React/RCTBridgeModule.h>
+#import <Expo/Expo.h>
 
 #endif /* examfacedetect_Bridging_Header_h */

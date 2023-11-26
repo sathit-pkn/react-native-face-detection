@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Platform, NativeModules, StyleSheet, Text, View,Image } from 'react-native';
 import {
   VisionCameraProxy,
@@ -8,10 +8,31 @@ import {
   useFrameProcessor
 } from 'react-native-vision-camera';
 import ImageResizer from 'react-native-image-resizer';
-import { Camera } from 'react-native-vision-camera';
 import { useSharedValue } from 'react-native-worklets-core';
 
+
+
+import { Camera, CameraType, FaceDetectionResult } from 'expo-camera';
+import * as FaceDetector from "expo-face-detector"
+
+
+
+
+const detections = {
+  BLINK: { instruction: "Blink both eyes", minProbability: 0.3 },
+  TURN_HEAD_LEFT: { instruction: "Turn head left", maxAngle: -15 },
+  TURN_HEAD_RIGHT: { instruction: "Turn head right", minAngle: 15 },
+  NOD: { instruction: "Nod", minDiff: 1.5 },
+  SMILE: { instruction: "Smile", minProbability: 0.7 }
+}
+
+
+
+
+
+
 const plugin = VisionCameraProxy.initFrameProcessorPlugin('detectFaces')
+
 
 
 let smiling  = false;
@@ -20,6 +41,58 @@ let rollAngleRight = false
 let eyeOpenProbability  = false;
 
 export default function App() {
+
+
+  const [textStep, setTextStep] = useState('ยิ้ม---')
+  const onFacesDetected = (result: FaceDetectionResult) => {
+
+ 
+
+  // 1. There is only a single face in the detection results.
+  if (result.faces.length !== 1) {
+    return
+  }
+ 
+  const face = result.faces[0]
+ 
+  const faceRect: Rect = {
+    minX: face.bounds.origin.x,
+    minY: face.bounds.origin.y,
+    width: face.bounds.size.width,
+    height: face.bounds.size.height
+  }
+ 
+  // 2. The face is fully contained within the camera preview.
+  const edgeOffset = 50
+  const faceRectSmaller: Rect = {
+    width: faceRect.width - edgeOffset,
+    height: faceRect.height - edgeOffset,
+    minY: faceRect.minY + edgeOffset / 2,
+    minX: faceRect.minX + edgeOffset / 2
+  }
+ 
+  
+ 
+ // console.log('face smile =',face.smilingProbability >= detections.SMILE.minProbability)
+ console.log(face.yawAngle);
+
+//  console.log('face blink =',face.leftEyeOpenProbability <= detections.BLINK.minProbability)
+    if ( face.yawAngle >= 300 ) {
+      //สำหรับ andoird เครื่องแปลกๆ
+     // console.log('face TURN_HEAD_LEFT  =', true)
+      setTextStep('face TURN_HEAD_RIGHT  =  true')
+    } else {
+      console.log('face TURN_HEAD_LEFT ios  =', face.yawAngle <= -10)
+    }
+  
+  //console.log('face TURN_HEAD_LEFT  =', face.yawAngle >= 300)
+  console.log('face TURN_HEAD_RIGHT  =',face.yawAngle >= 25)
+  // TODO: Process results at this point.
+
+
+}
+
+
 
 
   const [cameraPermission, setCameraPermission] = useState()
@@ -31,48 +104,13 @@ export default function App() {
 
   const [step, setStep] = useState(0)
 
-  const [textStep, setTextStep] = useState('ยิ้ม')
+
 
 
   const  [photo, setPhoto]  = useState(null)
-  const camera = useRef(null)
-  const takePhoto = async () => {
-    try {
-      //Error Handle better
-      if (camera.current == null) throw new Error('Camera Ref is Null');
-      console.log('Photo taking ....');
-      const photo = await camera.current.takePhoto({});
-      console.log(photo.path)
-      console.log(photo.orientation)
 
-      console.log('width',photo.width)
-      console.log('height',photo.height)
-
-      let rotation = 0
-      if ( Platform.OS === 'ios') {
-        rotation = 0
-      } else {
-        rotation = 90
-      }
-      ImageResizer.createResizedImage(photo.path, 500, 500,'JPEG',
-      100,
-      rotation,
-      undefined,
-      false,)
-      .then(response => {
-        setPhoto(response.path)
-      })
-      .catch(err => {
-     
-      });
-      
-      //setPhoto(photo.path)
-
-
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  
 
   useEffect(() => {
     
@@ -86,172 +124,43 @@ export default function App() {
   }, [])
 
 
-  const myFunction = (() => {
-      //console.log("my function ")
-      if (progress.value == 1 ) {
-        setTextStep('หันขวา')
-      }
+  // const myFunction = (() => {
+  //     //console.log("my function ")
+  //     if (progress.value == 1 ) {
+  //       setTextStep('หันขวา')
+  //     }
 
-      if (progress.value == 2 ) {
-        setTextStep('หันช้าย')
-      }
+  //     if (progress.value == 2 ) {
+  //       setTextStep('หันช้าย')
+  //     }
 
-      if (progress.value == 3 ) {
-        setTextStep('กระพริบตา')
-      }
+  //     if (progress.value == 3 ) {
+  //       setTextStep('กระพริบตา')
+  //     }
 
-      if (progress.value == 4 ) {
-        setTextStep('สำเร็จ')
-      }
+  //     if (progress.value == 4 ) {
+  //       setTextStep('สำเร็จ')
+  //     }
      
-  })
-
-  const myFunctionJS = Worklets.createRunInJsFn(myFunction)
-
-  useEffect(() => {
-    Camera.getCameraPermissionStatus().then((response: any) => {
-      setCameraPermission(response)
-    })
-
-  }, [])
-
-  useEffect(() => {
-    if (cameraPermission != 'authorized') {
-      Camera.requestCameraPermission().then((response: any) => {
-        setCameraPermission(response)
-      })
-    }
-  }, [cameraPermission])
-
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
- 
-
-   runAtTargetFps(2, () => {
-     'worklet'
- 
-        if (plugin == null) {
-          throw new Error("Failed to load Frame Processor Plugin!")
-        }
-console.log(frame.pixelFormat)
-       
-        // if (progress.value == 5 ) {
-        //   myFunctionJS()
-        // }
-       //  console.log(frame.toArrayBuffer())
-        // const faces =  plugin.call(frame)
-
-        // if ( Platform.OS === 'ios') {
-        //   console.log("res scan face ",JSON.stringify(faces))
-        //   // is ios
-
-        //   if ( progress.value == 0 ) {
-        //     if ( faces?.smiling ) {
-        //       progress.value = 1
-        //       smiling = true
-        //       console.log('step=',1)
-        //       myFunctionJS()
-        //     }
-        //   }
-
-        //   if ( progress.value == 1 ) {
-        //      // turn right
-        //     if ( Number(faces?.faceAngle) > 4.0 ) {
-        //       progress.value = 2
-        //       smiling = true
-        //       console.log('step=',2)
-        //       myFunctionJS()
-        //     }
-        //   }
-
-        //   if ( progress.value == 2 ) {
-        //     // turn left
-        //     if ( Number(faces?.faceAngle) < -4.0 ) {
-        //       progress.value = 3
-        //       smiling = true
-        //       console.log('step=',3)
-        //       myFunctionJS()
-        //     }
-        //   }
-
-        //   if ( progress.value == 3 ) {
-        //     if ( faces?.blinking ) {
-        //       progress.value = 4
-        //       smiling = true
-        //       console.log('step=',4)
-        //       myFunctionJS()
-        //     }
-        //   }
+  // })
 
 
-        // } else {
-        //   // is andoird
-        //   console.log("res scan face ",JSON.stringify(faces))
-        //   if ( faces != undefined ) {
-        //     if ( step == 0 ) {
-        //       if ( Number(faces?.smiling) > 0.8 ) {
-               
-        //         smiling = true
-        //         console.log('step=',1)
-        //       }
-        //     }
 
-        //     if ( smiling ) {
-        //       // turn right
-        //       if ( Number(faces?.rollAngle) > 3.0 ) {
-        //         rollAngleLeft = true
-                
-        //         console.log('step=',2)
-        //       }
-        //     }
-
-        //     if ( smiling &&  rollAngleLeft) {
-        //        // turn left
-        //         if ( Number(faces?.rollAngle) < -3.0 ) {
-        //           rollAngleRight = true
-                 
-        //           console.log('step=',3)
-        //         }
-        //     }
-
-        //     if ( smiling  ) {
-        //       if ( Number(faces?.eyeOpenProbability) < 0.5 ) {
-        //         eyeOpenProbability = true
-
-        //         console.log('step=',4)
-        //         console.log('success')
-        //       }
-        //     }
-        //     //console.log('step=',step)
-        //   }
-
-
-        //   console.log('smiling=',smiling)
-        //   console.log('rollAngleLeft=',rollAngleLeft)
-        //   console.log('rollAngleRight=',rollAngleRight)
-        //   console.log('eyeOpenProbability=',eyeOpenProbability)
-         
-        // //  runOnJS(setStep)(8);
-        // }
-    })
-
-   
-  }, []);
-
-  const handleLorem = (lorem: boolean) => { setStep(8) }
-
-
+  const [type, setType] = useState(CameraType.front);
   return  device != null ? (
     <>
         <Camera
-          ref={camera}
           style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={true}
-          frameProcessor={frameProcessor}
-          photo={true}
-         // pixelFormat="yuv"
-        />
+          type={type}
+          onFacesDetected={onFacesDetected}
+          faceDetectorSettings={{
+            mode: FaceDetector.FaceDetectorMode.accurate,
+            detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
+            runClassifications: FaceDetector.FaceDetectorClassifications.all,
+            minDetectionInterval: 1000,
+            tracking: false,
+          }}
+        ></Camera>
          <Text style={styles.innerText}>{textStep}</Text>
          {photo != null && (
                     <Image style={{width: '100%', height: '100%'}} source={{uri: 'file://' + photo}} />
@@ -263,6 +172,11 @@ console.log(frame.pixelFormat)
 }
 
 const styles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    height: 500,
+    width: 500,
+  },
   baseText: {
     fontWeight: 'bold',
   },
@@ -273,3 +187,21 @@ const styles = StyleSheet.create({
     color: 'red',
   },
 });
+
+interface FaceDetection {
+  rollAngle: number
+  yawAngle: number
+  smilingProbability: number
+  leftEyeOpenProbability: number
+  rightEyeOpenProbability: number
+  bounds: {
+    origin: {
+      x: number
+      y: number
+    }
+    size: {
+      width: number
+      height: number
+    }
+  }
+}
